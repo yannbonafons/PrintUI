@@ -32,7 +32,9 @@ public struct ConsoleLogger: LogProvider {
     }
 
     public func log(_ event: LogEvent) {
-        guard enabledLevels.contains(event.level) else { return }
+        guard enabledLevels.contains(event.level) else {
+            return
+        }
 
         let subsystem = event.metadata["subsystem"] ?? defaultSubsystem
         let category = event.metadata["category"] ?? defaultCategory
