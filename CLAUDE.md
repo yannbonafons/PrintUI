@@ -1,12 +1,15 @@
 # PrintUI
 
-Intro
+Lightweight, provider-based logging library for Swift.
 
 ## Project structure
 
 ```
-Sources/PrintUI/              # Library source code
-Tests/PrintUITests/         # Unit tests
+Sources/PrintUI/
+  Events/                   # LogEvent, LogLevel, LogMetadata
+  Providers/                # LogProvider protocol + built-in ConsoleLogger
+  LoggerManager.swift       # Singleton dispatcher + public free functions
+Tests/PrintUITests/         # Unit tests (Swift Testing)
 Example/PrintUIApp/         # Demo app (Xcode project via project.yml)
 ```
 
@@ -23,7 +26,10 @@ Example/PrintUIApp/         # Demo app (Xcode project via project.yml)
 
 ## Architecture
 
-TBD
+- **LoggerManager** – `internal` singleton (`LoggerManager.instance`) that holds an array of `LogProvider`s and dispatches `LogEvent`s.
+- **LogProvider** – `public` protocol. Each provider declares its `enabledLevels` and receives filtered events via `log(_:)`.
+- **ConsoleLogger** – Default built-in provider wrapping `os.Logger` with a per-subsystem/category cache.
+- **Public API** – Free functions (`logDebug`, `logInfo`, `logError`, `registerLogProvider`, `disableCategories`, `disableSubsystem`) that delegate to `LoggerManager.instance`.
 
 ### Access Control Convention
 
