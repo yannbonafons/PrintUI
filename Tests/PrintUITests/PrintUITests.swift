@@ -235,7 +235,7 @@ struct LoggerManagerTests {
         let spy = SpyLogProvider()
         LoggerManager.instance.setProviders(providers: [spy])
 
-        LoggerManager.instance.resetProviders()
+        LoggerManager.instance.reset()
         logInfo("after reset")
 
         // Spy should no longer receive events after reset
@@ -259,7 +259,7 @@ struct PublicAPITests {
         logDebug("debug msg")
         #expect(spy.capturedEvents.last?.level == .debug)
         #expect(spy.capturedEvents.last?.message == "debug msg")
-        LoggerManager.instance.resetProviders()
+        LoggerManager.instance.reset()
     }
 
     @Test("logInfo dispatches .info event")
@@ -268,7 +268,7 @@ struct PublicAPITests {
         logInfo("info msg")
         #expect(spy.capturedEvents.last?.level == .info)
         #expect(spy.capturedEvents.last?.message == "info msg")
-        LoggerManager.instance.resetProviders()
+        LoggerManager.instance.reset()
     }
 
     @Test("logError dispatches .error event")
@@ -277,7 +277,7 @@ struct PublicAPITests {
         logError("error msg")
         #expect(spy.capturedEvents.last?.level == .error)
         #expect(spy.capturedEvents.last?.message == "error msg")
-        LoggerManager.instance.resetProviders()
+        LoggerManager.instance.reset()
     }
 
     @Test("disableCategories filters via singleton")
@@ -287,7 +287,7 @@ struct PublicAPITests {
         logInfo("visible", category: "General")
         logInfo("hidden", category: "Noisy")
         #expect(spy.capturedEvents.count == 1)
-        LoggerManager.instance.resetProviders()
+        LoggerManager.instance.reset()
     }
 
     @Test("disableSubsystem filters via singleton")
@@ -297,7 +297,7 @@ struct PublicAPITests {
         logInfo("visible", subsystem: "UI")
         logInfo("hidden", subsystem: "Net")
         #expect(spy.capturedEvents.count == 1)
-        LoggerManager.instance.resetProviders()
+        LoggerManager.instance.reset()
     }
 }
 

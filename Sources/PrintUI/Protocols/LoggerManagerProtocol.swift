@@ -5,7 +5,7 @@
 //  Created by Yann Bonafons on 13/05/2026.
 //
 
-public protocol LoggerManagerProtocol {
+nonisolated public protocol LoggerManagerProtocol: Sendable {
     func disableCategories(_ categories: [LoggerCategoryProtocol])
     func disableSubsystems(_ subsystems: [LoggerSubsystemProtocol])
     func disableDefaultSubsystem(file: String)

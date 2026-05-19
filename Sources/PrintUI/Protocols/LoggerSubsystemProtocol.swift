@@ -5,11 +5,11 @@
 //  Created by Yann Bonafons on 13/05/2026.
 //
 
-public protocol LoggerSubsystemProtocol {
+nonisolated public protocol LoggerSubsystemProtocol: Sendable {
     var identifier: String { get }
 }
 
-extension RawRepresentable where RawValue == String, Self: LoggerSubsystemProtocol {
+nonisolated extension RawRepresentable where RawValue == String, Self: LoggerSubsystemProtocol {
     public var identifier: String {
         rawValue
     }
