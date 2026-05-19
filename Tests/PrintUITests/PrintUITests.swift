@@ -21,14 +21,6 @@ final class SpyLogProvider: LogProvider, @unchecked Sendable {
     }
 }
 
-// MARK: - Helpers
-
-private func freshManager(providers: [any LogProvider] = []) -> LoggerManager {
-    let manager = LoggerManager()
-    manager.setProviders(providers: providers, includeDefaultProvider: false)
-    return manager
-}
-
 // MARK: - LogLevel Tests
 
 @Suite("LogLevel")
@@ -73,8 +65,8 @@ struct LogEventTests {
 
         #expect(event.level == .info)
         #expect(event.message == "hello")
-        #expect(event.subsystem == "Sub")
-        #expect(event.category == "Cat")
+        #expect(event.subsystem.identifier == "Sub")
+        #expect(event.category.identifier == "Cat")
         #expect(event.metadata["key"] == "value")
     }
 
@@ -95,9 +87,9 @@ struct LoggerManagerTests {
     @Test("Dispatches event to registered provider")
     func basicDispatch() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
+        LoggerManager.instance.setProviders(providers: [spy])
 
-        manager.log(.info, "test message")
+        logInfo("test message")
 
         #expect(spy.capturedEvents.count == 1)
         #expect(spy.capturedEvents.first?.message == "test message")
@@ -108,9 +100,9 @@ struct LoggerManagerTests {
     func multipleProviders() {
         let spy1 = SpyLogProvider()
         let spy2 = SpyLogProvider()
-        let manager = freshManager(providers: [spy1, spy2])
+        LoggerManager.instance.setProviders(providers: [spy1, spy2])
 
-        manager.log(.debug, "multi")
+        logDebug("multi")
 
         #expect(spy1.capturedEvents.count == 1)
         #expect(spy2.capturedEvents.count == 1)
@@ -121,11 +113,11 @@ struct LoggerManagerTests {
     @Test("Skips provider when level is not enabled")
     func levelFiltering() {
         let errorOnly = SpyLogProvider(enabledLevels: [.error])
-        let manager = freshManager(providers: [errorOnly])
+        LoggerManager.instance.setProviders(providers: [errorOnly])
 
-        manager.log(.debug, "ignored")
-        manager.log(.info, "ignored")
-        manager.log(.error, "captured")
+        logDebug("ignored")
+        logInfo("ignored")
+        logError("captured")
 
         #expect(errorOnly.capturedEvents.count == 1)
         #expect(errorOnly.capturedEvents.first?.level == .error)
@@ -136,9 +128,9 @@ struct LoggerManagerTests {
     @Test("Skips provider when isProviderReady is false")
     func providerNotReady() {
         let notReady = SpyLogProvider(isProviderReady: false)
-        let manager = freshManager(providers: [notReady])
+        LoggerManager.instance.setProviders(providers: [notReady])
 
-        manager.log(.info, "should be skipped")
+        logInfo("should be skipped")
 
         #expect(notReady.capturedEvents.isEmpty)
     }
@@ -148,9 +140,9 @@ struct LoggerManagerTests {
     @Test("Includes default metadata (file, line, function)")
     func defaultMetadata() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
+        LoggerManager.instance.setProviders(providers: [spy])
 
-        manager.log(.info, "meta test")
+        logInfo("meta test")
 
         let metadata = spy.capturedEvents.first?.metadata
         #expect(metadata?["file"] != nil)
@@ -161,9 +153,9 @@ struct LoggerManagerTests {
     @Test("User metadata merges with default metadata")
     func customMetadata() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
+        LoggerManager.instance.setProviders(providers: [spy])
 
-        manager.log(.info, "meta", metadata: ["userId": "123"])
+        logInfo("meta", metadata: ["userId": "123"])
 
         let metadata = spy.capturedEvents.first?.metadata
         #expect(metadata?["userId"] == "123")
@@ -175,25 +167,24 @@ struct LoggerManagerTests {
     @Test("Uses default subsystem and category")
     func defaults() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
+        LoggerManager.instance.setProviders(providers: [spy])
 
-        manager.log(.info, "defaults")
+        logInfo("defaults")
 
         let event = spy.capturedEvents.first
-        #expect(event?.subsystem == LoggerManager.defaultSubsystem)
-        #expect(event?.category == LoggerManager.defaultCategory)
+        #expect(event?.category.identifier == LoggerManager.instance.getDefaultCategory().identifier)
     }
 
     @Test("Custom subsystem and category are forwarded")
     func customSubsystemCategory() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
+        LoggerManager.instance.setProviders(providers: [spy])
 
-        manager.log(.info, "custom", subsystem: "MySub", category: "MyCat")
+        logInfo("custom", subsystem: "MySub", category: "MyCat")
 
         let event = spy.capturedEvents.first
-        #expect(event?.subsystem == "MySub")
-        #expect(event?.category == "MyCat")
+        #expect(event?.subsystem.identifier == "MySub")
+        #expect(event?.category.identifier == "MyCat")
     }
 
     // MARK: Disable categories / subsystems
@@ -201,11 +192,11 @@ struct LoggerManagerTests {
     @Test("Disabled categories are filtered out")
     func disableCategories() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
-
-        manager.disableCategories(["Analytics"])
-        manager.log(.info, "visible", category: "General")
-        manager.log(.info, "hidden", category: "Analytics")
+        LoggerManager.instance.setProviders(providers: [spy])
+        LoggerManager.instance.disableCategories(["Analytics"])
+        
+        logInfo("visible", category: "General")
+        logInfo("hidden", category: "Analytics")
 
         #expect(spy.capturedEvents.count == 1)
         #expect(spy.capturedEvents.first?.message == "visible")
@@ -214,11 +205,11 @@ struct LoggerManagerTests {
     @Test("Disabled subsystems are filtered out")
     func disableSubsystem() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
-
-        manager.disableSubsystem(["Networking"])
-        manager.log(.info, "visible", subsystem: "UI")
-        manager.log(.info, "hidden", subsystem: "Networking")
+        LoggerManager.instance.setProviders(providers: [spy])
+        LoggerManager.instance.disableSubsystems(["Networking"])
+        
+        logInfo("visible", subsystem: "UI")
+        logInfo("hidden", subsystem: "Networking")
 
         #expect(spy.capturedEvents.count == 1)
         #expect(spy.capturedEvents.first?.message == "visible")
@@ -230,10 +221,10 @@ struct LoggerManagerTests {
     func setProviders() {
         let spy1 = SpyLogProvider()
         let spy2 = SpyLogProvider()
-        let manager = freshManager(providers: [spy1])
-
-        manager.setProviders(providers: [spy2], includeDefaultProvider: false)
-        manager.log(.info, "only spy2")
+        LoggerManager.instance.setProviders(providers: [spy1])
+        LoggerManager.instance.setProviders(providers: [spy2])
+        
+        logInfo("only spy2")
 
         #expect(spy1.capturedEvents.isEmpty)
         #expect(spy2.capturedEvents.count == 1)
@@ -242,10 +233,10 @@ struct LoggerManagerTests {
     @Test("resetProviders restores default ConsoleLogger")
     func resetProviders() {
         let spy = SpyLogProvider()
-        let manager = freshManager(providers: [spy])
+        LoggerManager.instance.setProviders(providers: [spy])
 
-        manager.resetProviders()
-        manager.log(.info, "after reset")
+        LoggerManager.instance.resetProviders()
+        logInfo("after reset")
 
         // Spy should no longer receive events after reset
         #expect(spy.capturedEvents.isEmpty)
@@ -256,16 +247,15 @@ struct LoggerManagerTests {
 
 @Suite("Public API free functions")
 struct PublicAPITests {
-    private func configuredManager() -> (LoggerManager, SpyLogProvider) {
+    private func configuredManager() -> SpyLogProvider {
         let spy = SpyLogProvider()
-        let manager = LoggerManager.instance
-        manager.setProviders(providers: [spy], includeDefaultProvider: false)
-        return (manager, spy)
+        LoggerManager.instance.setProviders(providers: [spy])
+        return spy
     }
 
     @Test("logDebug dispatches .debug event")
     func logDebugFunction() {
-        let (_, spy) = configuredManager()
+        let spy = configuredManager()
         logDebug("debug msg")
         #expect(spy.capturedEvents.last?.level == .debug)
         #expect(spy.capturedEvents.last?.message == "debug msg")
@@ -274,7 +264,7 @@ struct PublicAPITests {
 
     @Test("logInfo dispatches .info event")
     func logInfoFunction() {
-        let (_, spy) = configuredManager()
+        let spy = configuredManager()
         logInfo("info msg")
         #expect(spy.capturedEvents.last?.level == .info)
         #expect(spy.capturedEvents.last?.message == "info msg")
@@ -283,27 +273,17 @@ struct PublicAPITests {
 
     @Test("logError dispatches .error event")
     func logErrorFunction() {
-        let (_, spy) = configuredManager()
+        let spy = configuredManager()
         logError("error msg")
         #expect(spy.capturedEvents.last?.level == .error)
         #expect(spy.capturedEvents.last?.message == "error msg")
         LoggerManager.instance.resetProviders()
     }
 
-    @Test("registerLogProvider adds provider via singleton")
-    func registerProvider() {
-        let spy = SpyLogProvider()
-        LoggerManager.instance.setProviders(providers: [], includeDefaultProvider: false)
-        registerLogProvider(spy)
-        logInfo("after register")
-        #expect(spy.capturedEvents.last?.message == "after register")
-        LoggerManager.instance.resetProviders()
-    }
-
     @Test("disableCategories filters via singleton")
     func disableCategoriesFunction() {
-        let (_, spy) = configuredManager()
-        disableCategories("Noisy")
+        let spy = configuredManager()
+        LoggerManager.instance.disableCategories(["Noisy"])
         logInfo("visible", category: "General")
         logInfo("hidden", category: "Noisy")
         #expect(spy.capturedEvents.count == 1)
@@ -312,8 +292,8 @@ struct PublicAPITests {
 
     @Test("disableSubsystem filters via singleton")
     func disableSubsystemFunction() {
-        let (_, spy) = configuredManager()
-        disableSubsystem("Net")
+        let spy = configuredManager()
+        LoggerManager.instance.disableSubsystems(["Net"])
         logInfo("visible", subsystem: "UI")
         logInfo("hidden", subsystem: "Net")
         #expect(spy.capturedEvents.count == 1)

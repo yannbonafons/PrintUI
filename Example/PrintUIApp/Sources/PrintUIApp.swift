@@ -4,7 +4,7 @@ import PrintUI
 @main
 struct PrintUIApp: App {
     init() {
-        registerLogProvider(InMemoryLogger.shared)
+        LoggerManager.instance.setProviders(providers: [InMemoryLogger.shared])
     }
 
     var body: some Scene {
