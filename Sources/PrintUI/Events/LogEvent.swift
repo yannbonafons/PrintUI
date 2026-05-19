@@ -8,14 +8,14 @@
 public struct LogEvent: Sendable {
     public let level: LogLevel
     public let message: String
-    public let subsystem: String
-    public let category: String
+    public let subsystem: any LoggerSubsystemProtocol
+    public let category: any LoggerCategoryProtocol
     public let metadata: LogMetadata
 
     public init(level: LogLevel,
                 message: String,
-                subsystem: String,
-                category: String,
+                subsystem: any LoggerSubsystemProtocol,
+                category: any LoggerCategoryProtocol,
                 metadata: LogMetadata = [:]) {
         self.level = level
         self.message = message
@@ -24,5 +24,3 @@ public struct LogEvent: Sendable {
         self.metadata = metadata
     }
 }
-
-public typealias LogMetadata = [String: String]

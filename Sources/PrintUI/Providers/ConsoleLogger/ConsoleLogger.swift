@@ -18,17 +18,9 @@ public struct ConsoleLogger: LogProvider {
     private static var loggerCache: [LoggerKey: Logger] = [:]
 
     public let enabledLevels: Set<LogLevel>
-    public let defaultSubsystem: String
-    public let defaultCategory: String
 
-    public init(
-        enabledLevels: Set<LogLevel> = Set(LogLevel.allCases),
-        subsystem: String = Bundle.main.bundleIdentifier ?? "PrintUI",
-        category: String = "default"
-    ) {
+    public init(enabledLevels: Set<LogLevel> = Set(LogLevel.allCases)) {
         self.enabledLevels = enabledLevels
-        self.defaultSubsystem = subsystem
-        self.defaultCategory = category
     }
 
     public func log(_ event: LogEvent) {
@@ -36,8 +28,8 @@ public struct ConsoleLogger: LogProvider {
             return
         }
 
-        let subsystem = event.metadata["subsystem"] ?? defaultSubsystem
-        let category = event.metadata["category"] ?? defaultCategory
+        let subsystem = event.subsystem.identifier
+        let category = event.category.identifier
 
         let logger = cachedLogger(subsystem: subsystem, category: category)
         let payload = formattedPayload(for: event)
@@ -53,17 +45,17 @@ public struct ConsoleLogger: LogProvider {
     }
 
     private func formattedPayload(for event: LogEvent) -> String {
-        let filteredMetadata = event.metadata
-            .filter { key, _ in key != "subsystem" && key != "category" }
+        let metadata = event.metadata
             .sorted { $0.key < $1.key }
-            .map { "\($0.key)=\($0.value)" }
-            .joined(separator: " ")
+            .map { "\($0.key): \($0.value)" }
+            .joined(separator: "\n")
 
-        if filteredMetadata.isEmpty {
-            return "\(event.level.prefix) \(event.message)"
+        let fullMessage = "\(event.level.prefix) - \(event.message)"
+        if metadata.isEmpty {
+            return fullMessage
+        } else {
+            return "\(fullMessage)\n- Metadata:\n\(metadata)"
         }
-
-        return "\(event.level.prefix) \(event.message) | \(filteredMetadata)"
     }
 
     private func cachedLogger(subsystem: String, category: String) -> Logger {
