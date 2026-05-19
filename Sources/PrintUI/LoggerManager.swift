@@ -1,22 +1,22 @@
 import Foundation
 
-public class LoggerManager: LoggerManagerProtocol {
+nonisolated public final class LoggerManager: LoggerManagerProtocol {
     private static let defaultSubsystem = Bundle.main.bundleIdentifier ?? "DefaultSubSystem"
     private static let defaultCategory = "DefaultCategory"
     
-    public static var instance = LoggerManager()
+    public static let instance = LoggerManager()
     
     private let lock = NSLock()
-    private var providers: [LogProvider] = []
-    private var disabledCategories: [LoggerCategoryProtocol] = []
-    private var disabledSubsystem: [LoggerSubsystemProtocol] = []
+    nonisolated(unsafe) private var providers: [LogProvider] = [ConsoleLogger()]
+    nonisolated(unsafe) private var disabledCategories: [LoggerCategoryProtocol] = []
+    nonisolated(unsafe) private var disabledSubsystem: [LoggerSubsystemProtocol] = []
     
     private init() {}
     
     private func mutate(_ mutation: () -> Void) {
         lock.lock()
+        defer { lock.unlock() }
         mutation()
-        lock.unlock()
     }
     
     private func defaultMetadata(
@@ -48,9 +48,11 @@ extension LoggerManager {
         file.components(separatedBy: "/").first ?? LoggerManager.defaultSubsystem
     }
 
-    func resetProviders() {
+    func reset() {
         mutate {
-            providers = []
+            providers = [ConsoleLogger()]
+            disabledCategories = []
+            disabledSubsystem = []
         }
     }
 
@@ -78,14 +80,16 @@ extension LoggerManager {
         )
 
         lock.lock()
+        defer { lock.unlock() }
         let currentProviders = providers
-        lock.unlock()
+        let currentDisableCategories = disabledCategories
+        let currentDisableSubsystem = disabledSubsystem
 
         currentProviders.forEach { provider in
             guard provider.enabledLevels.contains(level),
                   provider.isProviderReady,
-                  !disabledCategories.contains(where: { $0.identifier == event.category.identifier }),
-                  !disabledSubsystem.contains(where: { $0.identifier == event.subsystem.identifier }) else {
+                  !currentDisableCategories.contains(where: { $0.identifier == event.category.identifier }),
+                  !currentDisableSubsystem.contains(where: { $0.identifier == event.subsystem.identifier }) else {
                 return
             }
             provider.log(event)
@@ -117,7 +121,9 @@ extension LoggerManager {
 
     public func setProviders(providers: [LogProvider]) {
         mutate {
-            self.providers = providers
+            var newProviders = providers
+            newProviders.append(ConsoleLogger())
+            self.providers = newProviders
         }
     }
 }

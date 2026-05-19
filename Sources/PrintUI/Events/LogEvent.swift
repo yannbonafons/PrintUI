@@ -5,7 +5,7 @@
 //  Created by Yann Bonafons on 01/04/2026.
 //
 
-public struct LogEvent: Sendable {
+nonisolated public struct LogEvent: Sendable {
     public let level: LogLevel
     public let message: String
     public let subsystem: any LoggerSubsystemProtocol

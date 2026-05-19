@@ -8,14 +8,14 @@
 import Foundation
 import OSLog
 
-public struct ConsoleLogger: LogProvider {
+nonisolated public struct ConsoleLogger: LogProvider {
     private struct LoggerKey: Hashable {
         let subsystem: String
         let category: String
     }
 
     private static let loggerCacheLock = NSLock()
-    private static var loggerCache: [LoggerKey: Logger] = [:]
+    nonisolated(unsafe) private static var loggerCache: [LoggerKey: Logger] = [:]
 
     public let enabledLevels: Set<LogLevel>
 
@@ -61,15 +61,15 @@ public struct ConsoleLogger: LogProvider {
     private func cachedLogger(subsystem: String, category: String) -> Logger {
         let key = LoggerKey(subsystem: subsystem, category: category)
 
-        Self.loggerCacheLock.lock()
-        defer { Self.loggerCacheLock.unlock() }
+        ConsoleLogger.loggerCacheLock.lock()
+        defer { ConsoleLogger.loggerCacheLock.unlock() }
 
-        if let cachedLogger = Self.loggerCache[key] {
+        if let cachedLogger = ConsoleLogger.loggerCache[key] {
             return cachedLogger
         }
 
         let logger = Logger(subsystem: subsystem, category: category)
-        Self.loggerCache[key] = logger
+        ConsoleLogger.loggerCache[key] = logger
         return logger
     }
 }

@@ -14,7 +14,7 @@ public enum LogLevel: String, CaseIterable, Comparable, Sendable {
         lhs.rank < rhs.rank
     }
 
-    private var rank: Int {
+    nonisolated private var rank: Int {
         switch self {
         case .debug: return 0
         case .info: return 1
@@ -22,7 +22,7 @@ public enum LogLevel: String, CaseIterable, Comparable, Sendable {
         }
     }
 
-    var prefix: String {
+    nonisolated var prefix: String {
         switch self {
         case .debug: return "[DEBUG]"
         case .info: return "[INFO]"
