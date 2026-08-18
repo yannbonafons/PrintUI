@@ -5,7 +5,7 @@
 //  Created by Yann Bonafons on 11/05/2026.
 //
 
-public func logDebug(
+public nonisolated func logDebug(
     _ message: String,
     metadata: LogMetadata = [:],
     subsystem: LoggerSubsystemProtocol? = nil,
@@ -26,7 +26,7 @@ public func logDebug(
     )
 }
 
-public func logInfo(
+public nonisolated func logInfo(
     _ message: String,
     metadata: LogMetadata = [:],
     subsystem: LoggerSubsystemProtocol? = nil,
@@ -47,7 +47,7 @@ public func logInfo(
     )
 }
 
-public func logError(
+public nonisolated func logError(
     _ message: String,
     metadata: LogMetadata = [:],
     subsystem: LoggerSubsystemProtocol? = nil,
